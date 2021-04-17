@@ -6,8 +6,9 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 
 import io.github.cottonmc.cotton.gui.client.BackgroundPainter;
-import io.github.cottonmc.cotton.gui.client.LibGuiClient;
+import io.github.cottonmc.cotton.gui.client.LibGui;
 import io.github.cottonmc.cotton.gui.client.ScreenDrawing;
+import io.github.cottonmc.cotton.gui.impl.LibGuiCommon;
 import io.github.cottonmc.cotton.gui.widget.data.Axis;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,8 +20,8 @@ import org.jetbrains.annotations.Nullable;
 public class WSlider extends WAbstractSlider {
 	public static final int TRACK_WIDTH = 6;
 	public static final int THUMB_SIZE = 8;
-	public static final Identifier LIGHT_TEXTURE = new Identifier("libgui", "textures/widget/slider_light.png");
-	public static final Identifier DARK_TEXTURE = new Identifier("libgui", "textures/widget/slider_dark.png");
+	public static final Identifier LIGHT_TEXTURE = new Identifier(LibGuiCommon.MOD_ID, "textures/widget/slider_light.png");
+	public static final Identifier DARK_TEXTURE = new Identifier(LibGuiCommon.MOD_ID, "textures/widget/slider_dark.png");
 
 	@Environment(EnvType.CLIENT)
 	@Nullable
@@ -50,14 +51,14 @@ public class WSlider extends WAbstractSlider {
 	@Override
 	public void paint(MatrixStack matrices, int x, int y, int mouseX, int mouseY) {
 		if (backgroundPainter != null) {
-			backgroundPainter.paintBackground(x, y, this);
+			backgroundPainter.paintBackground(matrices, x, y, this);
 		} else {
 			float px = 1 / 32f;
 			// thumbX/Y: thumb position in widget-space
 			int thumbX, thumbY;
 			// thumbXOffset: thumb texture x offset in pixels
 			int thumbXOffset;
-			Identifier texture = LibGuiClient.config.darkMode ? DARK_TEXTURE : LIGHT_TEXTURE;
+			Identifier texture = LibGui.isDarkMode() ? DARK_TEXTURE : LIGHT_TEXTURE;
 
 			if (axis == Axis.VERTICAL) {
 				int trackX = x + width / 2 - TRACK_WIDTH / 2;
@@ -67,9 +68,9 @@ public class WSlider extends WAbstractSlider {
 						: Math.round(coordToValueRatio * (value - min));
 				thumbXOffset = 0;
 
-				ScreenDrawing.texturedRect(trackX, y + 1, TRACK_WIDTH, 1, texture, 16*px, 0*px, 22*px, 1*px, 0xFFFFFFFF);
-				ScreenDrawing.texturedRect(trackX, y + 2, TRACK_WIDTH, height - 2, texture, 16*px, 1*px, 22*px, 2*px, 0xFFFFFFFF);
-				ScreenDrawing.texturedRect(trackX, y + height, TRACK_WIDTH, 1, texture, 16*px, 2*px, 22*px, 3*px, 0xFFFFFFFF);
+				ScreenDrawing.texturedRect(matrices, trackX, y + 1, TRACK_WIDTH, 1, texture, 16*px, 0*px, 22*px, 1*px, 0xFFFFFFFF);
+				ScreenDrawing.texturedRect(matrices, trackX, y + 2, TRACK_WIDTH, height - 2, texture, 16*px, 1*px, 22*px, 2*px, 0xFFFFFFFF);
+				ScreenDrawing.texturedRect(matrices, trackX, y + height, TRACK_WIDTH, 1, texture, 16*px, 2*px, 22*px, 3*px, 0xFFFFFFFF);
 			} else {
 				int trackY = y + height / 2 - TRACK_WIDTH / 2;
 				thumbX = direction == Direction.LEFT
@@ -78,18 +79,18 @@ public class WSlider extends WAbstractSlider {
 				thumbY = height / 2 - THUMB_SIZE / 2;
 				thumbXOffset = 8;
 
-				ScreenDrawing.texturedRect(x, trackY, 1, TRACK_WIDTH, texture, 16*px, 3*px, 17*px, 9*px, 0xFFFFFFFF);
-				ScreenDrawing.texturedRect(x + 1, trackY, width - 2, TRACK_WIDTH, texture, 17*px, 3*px, 18*px, 9*px, 0xFFFFFFFF);
-				ScreenDrawing.texturedRect(x + width - 1, trackY, 1, TRACK_WIDTH, texture, 18*px, 3*px, 19*px, 9*px, 0xFFFFFFFF);
+				ScreenDrawing.texturedRect(matrices, x, trackY, 1, TRACK_WIDTH, texture, 16*px, 3*px, 17*px, 9*px, 0xFFFFFFFF);
+				ScreenDrawing.texturedRect(matrices, x + 1, trackY, width - 2, TRACK_WIDTH, texture, 17*px, 3*px, 18*px, 9*px, 0xFFFFFFFF);
+				ScreenDrawing.texturedRect(matrices, x + width - 1, trackY, 1, TRACK_WIDTH, texture, 18*px, 3*px, 19*px, 9*px, 0xFFFFFFFF);
 			}
 
 			// thumbState values:
 			// 0: default, 1: dragging, 2: hovered
 			int thumbState = dragging ? 1 : (mouseX >= thumbX && mouseX <= thumbX + THUMB_SIZE && mouseY >= thumbY && mouseY <= thumbY + THUMB_SIZE ? 2 : 0);
-			ScreenDrawing.texturedRect(x + thumbX, y + thumbY, THUMB_SIZE, THUMB_SIZE, texture, thumbXOffset*px, 0*px + thumbState * 8*px, (thumbXOffset + 8)*px, 8*px + thumbState * 8*px, 0xFFFFFFFF);
+			ScreenDrawing.texturedRect(matrices, x + thumbX, y + thumbY, THUMB_SIZE, THUMB_SIZE, texture, thumbXOffset*px, 0*px + thumbState * 8*px, (thumbXOffset + 8)*px, 8*px + thumbState * 8*px, 0xFFFFFFFF);
 
 			if (thumbState == 0 && isFocused()) {
-				ScreenDrawing.texturedRect(x + thumbX, y + thumbY, THUMB_SIZE, THUMB_SIZE, texture, 0*px, 24*px, 8*px, 32*px, 0xFFFFFFFF);
+				ScreenDrawing.texturedRect(matrices, x + thumbX, y + thumbY, THUMB_SIZE, THUMB_SIZE, texture, 0*px, 24*px, 8*px, 32*px, 0xFFFFFFFF);
 			}
 		}
 	}

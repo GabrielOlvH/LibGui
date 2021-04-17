@@ -1,9 +1,17 @@
 package io.github.cottonmc.test.client;
 
-import io.github.cottonmc.cotton.gui.client.BackgroundPainter;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.text.LiteralText;
+import net.minecraft.util.Identifier;
+
+import io.github.cottonmc.cotton.gui.client.CottonClientScreen;
 import io.github.cottonmc.cotton.gui.client.LightweightGuiDescription;
 import io.github.cottonmc.cotton.gui.client.ScreenDrawing;
 import io.github.cottonmc.cotton.gui.widget.TooltipBuilder;
+import io.github.cottonmc.cotton.gui.widget.WButton;
 import io.github.cottonmc.cotton.gui.widget.WGridPanel;
 import io.github.cottonmc.cotton.gui.widget.WLabel;
 import io.github.cottonmc.cotton.gui.widget.WSlider;
@@ -12,19 +20,9 @@ import io.github.cottonmc.cotton.gui.widget.WTiledSprite;
 import io.github.cottonmc.cotton.gui.widget.WWidget;
 import io.github.cottonmc.cotton.gui.widget.data.Axis;
 import io.github.cottonmc.cotton.gui.widget.data.Color;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.LiteralText;
-import net.minecraft.util.Identifier;
+import io.github.cottonmc.cotton.gui.widget.data.Insets;
 
 public class TestClientGui extends LightweightGuiDescription {
-
-	@Environment(EnvType.CLIENT)
-	public static final BackgroundPainter PANEL = (x, y, panel)->{
-		ScreenDrawing.drawBeveledPanel(x-1, y-1, panel.getWidth()+2, panel.getHeight()+2);
-	};
-	
 	//private static final Identifier PORTAL1 = new Identifier("libgui-test:portal.png");
 	//private static final Identifier PORTAL2 = new Identifier("libgui-test:portal2.png");
 	
@@ -34,6 +32,7 @@ public class TestClientGui extends LightweightGuiDescription {
 	
 	public TestClientGui() {
 		WGridPanel root = new WGridPanel(22);
+		root.setInsets(Insets.ROOT_PANEL);
 		this.setRootPanel(root);
 		WLabel title = new WLabel(new LiteralText("Client Test Gui"), WLabel.DEFAULT_TEXT_COLOR) {
 			@Environment(EnvType.CLIENT)
@@ -107,7 +106,12 @@ public class TestClientGui extends LightweightGuiDescription {
 			this.b = i;
 			updateCol(col);
 		});
-		
+
+		WButton openOther = new WButton(new LiteralText("Go to scrolling"));
+		openOther.setOnClick(() -> {
+			MinecraftClient.getInstance().openScreen(new CottonClientScreen(new ScrollingTestGui()));
+		});
+		root.add(openOther, 0, 7, 4, 1);
 		
 		root.validate(this);
 	}
@@ -146,7 +150,7 @@ public class TestClientGui extends LightweightGuiDescription {
 		
 		@Override
 		public void paint(MatrixStack matrices, int x, int y, int mouseX, int mouseY) {
-			ScreenDrawing.coloredRect(x, y, this.getWidth(), this.getHeight(), color);
+			ScreenDrawing.coloredRect(matrices, x, y, this.getWidth(), this.getHeight(), color);
 		}
 	}
 }

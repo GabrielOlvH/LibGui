@@ -10,10 +10,11 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 
-import io.github.cottonmc.cotton.gui.client.LibGuiClient;
+import io.github.cottonmc.cotton.gui.client.LibGui;
 import io.github.cottonmc.cotton.gui.client.ScreenDrawing;
-import io.github.cottonmc.cotton.gui.client.TextHoverRendererScreen;
+import io.github.cottonmc.cotton.gui.impl.client.LibGuiConfig;
 import io.github.cottonmc.cotton.gui.widget.data.HorizontalAlignment;
+import io.github.cottonmc.cotton.gui.widget.data.InputResult;
 import io.github.cottonmc.cotton.gui.widget.data.VerticalAlignment;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,7 +34,7 @@ public class WLabel extends WWidget {
 	public static final int DEFAULT_TEXT_COLOR = 0x404040;
 
 	/**
-	 * The default text color for {@linkplain io.github.cottonmc.cotton.gui.client.LibGuiConfig#darkMode dark mode} labels.
+	 * The default text color for {@linkplain LibGuiConfig#darkMode dark mode} labels.
 	 */
 	public static final int DEFAULT_DARKMODE_TEXT_COLOR = 0xbcbcbc;
 
@@ -98,27 +99,24 @@ public class WLabel extends WWidget {
 				break;
 		}
 
-		ScreenDrawing.drawString(matrices, text.asOrderedText(), horizontalAlignment, x, y + yOffset, this.getWidth(), LibGuiClient.config.darkMode ? darkmodeColor : color);
+		ScreenDrawing.drawString(matrices, text.asOrderedText(), horizontalAlignment, x, y + yOffset, this.getWidth(), LibGui.isDarkMode() ? darkmodeColor : color);
 
 		Style hoveredTextStyle = getTextStyleAt(mouseX, mouseY);
-		if (hoveredTextStyle != null) {
-			Screen screen = MinecraftClient.getInstance().currentScreen;
-			if (screen instanceof TextHoverRendererScreen) {
-				((TextHoverRendererScreen) screen).renderTextHover(matrices, hoveredTextStyle, x + mouseX, y + mouseY);
-			}
-		}
+		ScreenDrawing.drawTextHover(matrices, hoveredTextStyle, x + mouseX, y + mouseY);
 	}
 
 	@Environment(EnvType.CLIENT)
 	@Override
-	public void onClick(int x, int y, int button) {
+	public InputResult onClick(int x, int y, int button) {
 		Style hoveredTextStyle = getTextStyleAt(x, y);
 		if (hoveredTextStyle != null) {
 			Screen screen = MinecraftClient.getInstance().currentScreen;
 			if (screen != null) {
-				screen.handleTextClick(hoveredTextStyle);
+				return InputResult.of(screen.handleTextClick(hoveredTextStyle));
 			}
 		}
+
+		return InputResult.IGNORED;
 	}
 
 	/**

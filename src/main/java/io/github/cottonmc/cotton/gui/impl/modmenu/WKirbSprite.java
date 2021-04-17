@@ -1,18 +1,19 @@
-package io.github.cottonmc.cotton.gui.client.modmenu;
+package io.github.cottonmc.cotton.gui.impl.modmenu;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 
-import io.github.cottonmc.cotton.gui.client.LibGuiClient;
+import io.github.cottonmc.cotton.gui.client.LibGui;
 import io.github.cottonmc.cotton.gui.client.ScreenDrawing;
+import io.github.cottonmc.cotton.gui.impl.LibGuiCommon;
 import io.github.cottonmc.cotton.gui.widget.WWidget;
 
 import java.util.ArrayList;
 
 public class WKirbSprite extends WWidget {
-	private static final Identifier KIRB = new Identifier("libgui:textures/widget/kirb.png");
+	private static final Identifier KIRB = new Identifier(LibGuiCommon.MOD_ID, "textures/widget/kirb.png");
 	
 	private static final float PX = 1f/416f;
 	private static final float KIRB_WIDTH = 32*PX;
@@ -30,7 +31,7 @@ public class WKirbSprite extends WWidget {
 	private long lastFrame;
 
 	public WKirbSprite() {
-		state = (LibGuiClient.config.darkMode) ? State.ASLEEP : State.AWAKE;
+		state = (LibGui.isDarkMode()) ? State.ASLEEP : State.AWAKE;
 	}
 	
 	public void schedule(int[] frames) {
@@ -60,7 +61,7 @@ public class WKirbSprite extends WWidget {
 		
 		if (pendingFrames.isEmpty()) {
 			
-			if (LibGuiClient.config.darkMode) {
+			if (LibGui.isDarkMode()) {
 				switch(state) {
 				case AWAKE:
 					state = State.FALLING_ASLEEP;
@@ -96,7 +97,7 @@ public class WKirbSprite extends WWidget {
 		}
 		
 		float offset = KIRB_WIDTH * currentFrame;
-		ScreenDrawing.texturedRect(x, y+8, 32, 32, KIRB, offset, 0, offset+KIRB_WIDTH, 1, 0xFFFFFFFF);
+		ScreenDrawing.texturedRect(matrices, x, y+8, 32, 32, KIRB, offset, 0, offset+KIRB_WIDTH, 1, 0xFFFFFFFF);
 		
 		long elapsed = now - lastFrame;
 		currentFrameTime += elapsed;

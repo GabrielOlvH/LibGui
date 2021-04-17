@@ -11,10 +11,12 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 import io.github.cottonmc.cotton.gui.client.BackgroundPainter;
-import io.github.cottonmc.cotton.gui.client.LibGuiClient;
+import io.github.cottonmc.cotton.gui.client.LibGui;
 import io.github.cottonmc.cotton.gui.client.ScreenDrawing;
+import io.github.cottonmc.cotton.gui.impl.LibGuiCommon;
 import io.github.cottonmc.cotton.gui.widget.data.Axis;
 import io.github.cottonmc.cotton.gui.widget.data.HorizontalAlignment;
+import io.github.cottonmc.cotton.gui.widget.data.InputResult;
 import io.github.cottonmc.cotton.gui.widget.icon.Icon;
 import org.jetbrains.annotations.Nullable;
 
@@ -286,7 +288,7 @@ public class WTabPanel extends WPanel {
 
 		@Environment(EnvType.CLIENT)
 		@Override
-		public void onClick(int x, int y, int button) {
+		public InputResult onClick(int x, int y, int button) {
 			super.onClick(x, y, button);
 
 			MinecraftClient.getInstance().getSoundManager().play(PositionedSoundInstance.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
@@ -297,6 +299,7 @@ public class WTabPanel extends WPanel {
 
 			mainPanel.setSelectedCard(data.getWidget());
 			WTabPanel.this.layout();
+			return InputResult.PROCESSED;
 		}
 
 		@Environment(EnvType.CLIENT)
@@ -324,9 +327,9 @@ public class WTabPanel extends WPanel {
 				}
 			}
 
-			(selected ? Painters.SELECTED_TAB : Painters.UNSELECTED_TAB).paintBackground(x, y, this);
+			(selected ? Painters.SELECTED_TAB : Painters.UNSELECTED_TAB).paintBackground(matrices, x, y, this);
 			if (isFocused()) {
-				(selected ? Painters.SELECTED_TAB_FOCUS_BORDER : Painters.UNSELECTED_TAB_FOCUS_BORDER).paintBackground(x, y, this);
+				(selected ? Painters.SELECTED_TAB_FOCUS_BORDER : Painters.UNSELECTED_TAB_FOCUS_BORDER).paintBackground(matrices, x, y, this);
 			}
 
 			int iconX = 6;
@@ -338,7 +341,7 @@ public class WTabPanel extends WPanel {
 				HorizontalAlignment align = (icon != null) ? HorizontalAlignment.LEFT : HorizontalAlignment.CENTER;
 
 				int color;
-				if (LibGuiClient.config.darkMode) {
+				if (LibGui.isDarkMode()) {
 					color = WLabel.DEFAULT_DARKMODE_TEXT_COLOR;
 				} else {
 					color = selected ? WLabel.DEFAULT_TEXT_COLOR : 0xEEEEEE;
@@ -364,16 +367,16 @@ public class WTabPanel extends WPanel {
 	@Environment(EnvType.CLIENT)
 	final static class Painters {
 		static final BackgroundPainter SELECTED_TAB = BackgroundPainter.createLightDarkVariants(
-				BackgroundPainter.createNinePatch(new Identifier("libgui", "textures/widget/tab/selected_light.png")).setTopPadding(2),
-				BackgroundPainter.createNinePatch(new Identifier("libgui", "textures/widget/tab/selected_dark.png")).setTopPadding(2)
+				BackgroundPainter.createNinePatch(new Identifier(LibGuiCommon.MOD_ID, "textures/widget/tab/selected_light.png")).setTopPadding(2),
+				BackgroundPainter.createNinePatch(new Identifier(LibGuiCommon.MOD_ID, "textures/widget/tab/selected_dark.png")).setTopPadding(2)
 		);
 
 		static final BackgroundPainter UNSELECTED_TAB = BackgroundPainter.createLightDarkVariants(
-				BackgroundPainter.createNinePatch(new Identifier("libgui", "textures/widget/tab/unselected_light.png")),
-				BackgroundPainter.createNinePatch(new Identifier("libgui", "textures/widget/tab/unselected_dark.png"))
+				BackgroundPainter.createNinePatch(new Identifier(LibGuiCommon.MOD_ID, "textures/widget/tab/unselected_light.png")),
+				BackgroundPainter.createNinePatch(new Identifier(LibGuiCommon.MOD_ID, "textures/widget/tab/unselected_dark.png"))
 		);
 
-		static final BackgroundPainter SELECTED_TAB_FOCUS_BORDER = BackgroundPainter.createNinePatch(new Identifier("libgui", "textures/widget/tab/focus.png")).setTopPadding(2);
-		static final BackgroundPainter UNSELECTED_TAB_FOCUS_BORDER = BackgroundPainter.createNinePatch(new Identifier("libgui", "textures/widget/tab/focus.png"));
+		static final BackgroundPainter SELECTED_TAB_FOCUS_BORDER = BackgroundPainter.createNinePatch(new Identifier(LibGuiCommon.MOD_ID, "textures/widget/tab/focus.png")).setTopPadding(2);
+		static final BackgroundPainter UNSELECTED_TAB_FOCUS_BORDER = BackgroundPainter.createNinePatch(new Identifier(LibGuiCommon.MOD_ID, "textures/widget/tab/focus.png"));
 	}
 }

@@ -8,7 +8,9 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.LiteralText;
@@ -17,9 +19,9 @@ import net.minecraft.util.math.MathHelper;
 
 import io.github.cottonmc.cotton.gui.client.BackgroundPainter;
 import io.github.cottonmc.cotton.gui.client.ScreenDrawing;
+import io.github.cottonmc.cotton.gui.widget.data.InputResult;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -314,8 +316,8 @@ public class WTextField extends WWidget {
 		if (this.font==null) this.font = MinecraftClient.getInstance().textRenderer;
 		
 		int borderColor = (this.isFocused()) ? 0xFF_FFFFA0 : 0xFF_A0A0A0;
-		ScreenDrawing.coloredRect(x-1, y-1, width+2, height+2, borderColor);
-		ScreenDrawing.coloredRect(x, y, width, height, 0xFF000000);
+		ScreenDrawing.coloredRect(matrices, x-1, y-1, width+2, height+2, borderColor);
+		ScreenDrawing.coloredRect(matrices, x, y, width, height, 0xFF000000);
 		
 
 		int textColor = this.editable ? this.enabledColor : this.uneditableColor;
@@ -369,7 +371,7 @@ public class WTextField extends WWidget {
 				//} else {
 				//	caretLoc = textX+caretLoc-1;
 				//}
-				ScreenDrawing.coloredRect(preCursorAdvance-1, textY-2, 1, 12, 0xFFD0D0D0);
+				ScreenDrawing.coloredRect(matrices, preCursorAdvance-1, textY-2, 1, 12, 0xFFD0D0D0);
 			//if (boolean_3) {
 			//	int var10001 = int_7 - 1;
 			//	var10002 = int_9 + 1;
@@ -403,11 +405,12 @@ public class WTextField extends WWidget {
 	private void invertedRect(int x, int y, int width, int height) {
 		Tessellator tessellator_1 = Tessellator.getInstance();
 		BufferBuilder bufferBuilder_1 = tessellator_1.getBuffer();
-		RenderSystem.color4f(0.0F, 0.0F, 255.0F, 255.0F);
+		RenderSystem.setShaderColor(0.0F, 0.0F, 1.0F, 1.0F);
+		RenderSystem.setShader(GameRenderer::method_34542);
 		RenderSystem.disableTexture();
 		RenderSystem.enableColorLogicOp();
 		RenderSystem.logicOp(GlStateManager.LogicOp.OR_REVERSE);
-		bufferBuilder_1.begin(GL11.GL_QUADS, VertexFormats.POSITION);
+		bufferBuilder_1.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION);
 		bufferBuilder_1.vertex(x,       y+height, 0.0D).next();
 		bufferBuilder_1.vertex(x+width, y+height, 0.0D).next();
 		bufferBuilder_1.vertex(x+width, y,        0.0D).next();
@@ -538,9 +541,10 @@ public class WTextField extends WWidget {
 
 	@Environment(EnvType.CLIENT)
 	@Override
-	public void onClick(int x, int y, int button) {
+	public InputResult onClick(int x, int y, int button) {
 		requestFocus();
 		cursor = getCaretPos(this.text, x-OFFSET_X_TEXT);
+		return InputResult.PROCESSED;
 	}
 
 	@Environment(EnvType.CLIENT)

@@ -8,13 +8,18 @@ import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
+import io.github.cottonmc.cotton.gui.client.LibGui;
 import io.github.cottonmc.cotton.gui.client.ScreenDrawing;
 import io.github.cottonmc.cotton.gui.widget.data.HorizontalAlignment;
+import io.github.cottonmc.cotton.gui.widget.data.InputResult;
 import io.github.cottonmc.cotton.gui.widget.icon.Icon;
 import org.jetbrains.annotations.Nullable;
 
 public class WButton extends WWidget {
+	private static final Identifier DARK_WIDGETS_LOCATION = new Identifier("libgui", "textures/widget/dark_widgets.png");
+
 	private Text label;
 	protected int color = WLabel.DEFAULT_TEXT_COLOR;
 	protected int darkmodeColor = WLabel.DEFAULT_TEXT_COLOR;
@@ -92,9 +97,10 @@ public class WButton extends WWidget {
 		float buttonHeight = 20*px;
 		
 		float buttonEndLeft = (200-(getWidth()/2)) * px;
-		
-		ScreenDrawing.texturedRect(x, y, getWidth()/2, 20, AbstractButtonWidget.WIDGETS_LOCATION, buttonLeft, buttonTop, buttonLeft+buttonWidth, buttonTop+buttonHeight, 0xFFFFFFFF);
-		ScreenDrawing.texturedRect(x+(getWidth()/2), y, getWidth()/2, 20, AbstractButtonWidget.WIDGETS_LOCATION, buttonEndLeft, buttonTop, 200*px, buttonTop+buttonHeight, 0xFFFFFFFF);
+
+		Identifier texture = getTexture();
+		ScreenDrawing.texturedRect(matrices, x, y, getWidth()/2, 20, texture, buttonLeft, buttonTop, buttonLeft+buttonWidth, buttonTop+buttonHeight, 0xFFFFFFFF);
+		ScreenDrawing.texturedRect(matrices, x+(getWidth()/2), y, getWidth()/2, 20, texture, buttonEndLeft, buttonTop, 200*px, buttonTop+buttonHeight, 0xFFFFFFFF);
 
 		if (icon != null) {
 			icon.paint(matrices, x + 1, y + 1, 16);
@@ -120,14 +126,17 @@ public class WButton extends WWidget {
 
 	@Environment(EnvType.CLIENT)
 	@Override
-	public void onClick(int x, int y, int button) {
+	public InputResult onClick(int x, int y, int button) {
 		super.onClick(x, y, button);
 		
 		if (enabled && isWithinBounds(x, y)) {
 			MinecraftClient.getInstance().getSoundManager().play(PositionedSoundInstance.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
 
 			if (onClick!=null) onClick.run();
+			return InputResult.PROCESSED;
 		}
+
+		return InputResult.IGNORED;
 	}
 
 	@Environment(EnvType.CLIENT)
@@ -208,5 +217,10 @@ public class WButton extends WWidget {
 	public WButton setIcon(@Nullable Icon icon) {
 		this.icon = icon;
 		return this;
+	}
+
+	@Environment(EnvType.CLIENT)
+	static Identifier getTexture() {
+		return LibGui.isDarkMode() ? DARK_WIDGETS_LOCATION : AbstractButtonWidget.WIDGETS_LOCATION;
 	}
 }

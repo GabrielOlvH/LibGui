@@ -9,8 +9,10 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
-import io.github.cottonmc.cotton.gui.client.LibGuiClient;
+import io.github.cottonmc.cotton.gui.client.LibGui;
 import io.github.cottonmc.cotton.gui.client.ScreenDrawing;
+import io.github.cottonmc.cotton.gui.impl.LibGuiCommon;
+import io.github.cottonmc.cotton.gui.widget.data.InputResult;
 import io.github.cottonmc.cotton.gui.widget.data.Texture;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,9 +20,9 @@ import java.util.function.Consumer;
 
 public class WToggleButton extends WWidget {
 	// Default on/off images
-	protected static final Texture DEFAULT_OFF_IMAGE = new Texture(new Identifier("libgui:textures/widget/toggle_off.png"));
-	protected static final Texture DEFAULT_ON_IMAGE  = new Texture(new Identifier("libgui:textures/widget/toggle_on.png"));
-	protected static final Texture DEFAULT_FOCUS_IMAGE = new Texture(new Identifier("libgui:textures/widget/toggle_focus.png"));
+	protected static final Texture DEFAULT_OFF_IMAGE = new Texture(new Identifier(LibGuiCommon.MOD_ID, "textures/widget/toggle_off.png"));
+	protected static final Texture DEFAULT_ON_IMAGE  = new Texture(new Identifier(LibGuiCommon.MOD_ID, "textures/widget/toggle_on.png"));
+	protected static final Texture DEFAULT_FOCUS_IMAGE = new Texture(new Identifier(LibGuiCommon.MOD_ID, "textures/widget/toggle_focus.png"));
 
 	protected Texture onImage;
 	protected Texture offImage;
@@ -101,13 +103,13 @@ public class WToggleButton extends WWidget {
 	@Environment(EnvType.CLIENT)
 	@Override
 	public void paint(MatrixStack matrices, int x, int y, int mouseX, int mouseY) {
-		ScreenDrawing.texturedRect(x, y, 18, 18, isOn ? onImage : offImage, 0xFFFFFFFF);
+		ScreenDrawing.texturedRect(matrices, x, y, 18, 18, isOn ? onImage : offImage, 0xFFFFFFFF);
 		if (isFocused()) {
-			ScreenDrawing.texturedRect(x, y, 18, 18, focusImage, 0xFFFFFFFF);
+			ScreenDrawing.texturedRect(matrices, x, y, 18, 18, focusImage, 0xFFFFFFFF);
 		}
 
 		if (label!=null) {
-			ScreenDrawing.drawString(matrices, label.asOrderedText(), x + 22, y+6, LibGuiClient.config.darkMode ? darkmodeColor : color);
+			ScreenDrawing.drawString(matrices, label.asOrderedText(), x + 22, y+6, LibGui.isDarkMode() ? darkmodeColor : color);
 		}
 	}
 	
@@ -123,13 +125,12 @@ public class WToggleButton extends WWidget {
 
 	@Environment(EnvType.CLIENT)
 	@Override
-	public void onClick(int x, int y, int button) {
-		super.onClick(x, y, button);
-		
+	public InputResult onClick(int x, int y, int button) {
 		MinecraftClient.getInstance().getSoundManager().play(PositionedSoundInstance.master(SoundEvents.UI_BUTTON_CLICK, 1.0F));
 
 		this.isOn = !this.isOn;
 		onToggle(this.isOn);
+		return InputResult.PROCESSED;
 	}
 
 	@Override

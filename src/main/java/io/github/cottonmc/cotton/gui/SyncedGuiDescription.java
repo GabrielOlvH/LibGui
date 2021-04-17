@@ -26,7 +26,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.World;
 
 import io.github.cottonmc.cotton.gui.client.BackgroundPainter;
-import io.github.cottonmc.cotton.gui.client.LibGuiClient;
+import io.github.cottonmc.cotton.gui.client.LibGui;
 import io.github.cottonmc.cotton.gui.networking.NetworkSide;
 import io.github.cottonmc.cotton.gui.widget.WGridPanel;
 import io.github.cottonmc.cotton.gui.widget.WLabel;
@@ -34,6 +34,7 @@ import io.github.cottonmc.cotton.gui.widget.WPanel;
 import io.github.cottonmc.cotton.gui.widget.WPlayerInvPanel;
 import io.github.cottonmc.cotton.gui.widget.WWidget;
 import io.github.cottonmc.cotton.gui.widget.data.HorizontalAlignment;
+import io.github.cottonmc.cotton.gui.widget.data.Insets;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ public class SyncedGuiDescription extends ScreenHandler implements GuiDescriptio
 	protected World world;
 	protected PropertyDelegate propertyDelegate;
 	
-	protected WPanel rootPanel = new WGridPanel();
+	protected WPanel rootPanel = new WGridPanel().setInsets(Insets.ROOT_PANEL);
 	protected int titleColor = WLabel.DEFAULT_TEXT_COLOR;
 	protected int darkTitleColor = WLabel.DEFAULT_DARKMODE_TEXT_COLOR;
 	protected boolean fullscreen = false;
@@ -80,7 +81,7 @@ public class SyncedGuiDescription extends ScreenHandler implements GuiDescriptio
 	}
 	
 	public int getTitleColor() {
-		return (world.isClient && LibGuiClient.config.darkMode) ? darkTitleColor : titleColor;
+		return (world.isClient && LibGui.isDarkMode()) ? darkTitleColor : titleColor;
 	}
 	
 	public SyncedGuiDescription setRootPanel(WPanel panel) {
@@ -114,17 +115,17 @@ public class SyncedGuiDescription extends ScreenHandler implements GuiDescriptio
 	}
 	
 	@Override
-	public ItemStack onSlotClick(int slotNumber, int button, SlotActionType action, PlayerEntity player) {
+	public void onSlotClick(int slotNumber, int button, SlotActionType action, PlayerEntity player) {
 		if (action==SlotActionType.QUICK_MOVE) {
 			
 			if (slotNumber < 0) {
-				return ItemStack.EMPTY;
+				return;
 			}
 			
-			if (slotNumber>=this.slots.size()) return ItemStack.EMPTY;
+			if (slotNumber>=this.slots.size()) return;
 			Slot slot = this.slots.get(slotNumber);
 			if (slot == null || !slot.canTakeItems(player)) {
-				return ItemStack.EMPTY;
+				return;
 			}
 			
 			ItemStack remaining = ItemStack.EMPTY;
@@ -136,15 +137,15 @@ public class SyncedGuiDescription extends ScreenHandler implements GuiDescriptio
 					if (slot.inventory==blockInventory) {
 						//Try to transfer the item from the block into the player's inventory
 						if (!this.insertItem(toTransfer, this.playerInventory, true, player)) {
-							return ItemStack.EMPTY;
+							return;
 						}
 					} else if (!this.insertItem(toTransfer, this.blockInventory, false, player)) { //Try to transfer the item from the player to the block
-						return ItemStack.EMPTY;
+						return;
 					}
 				} else {
 					//There's no block, just swap between the player's storage and their hotbar
 					if (!swapHotbar(toTransfer, slotNumber, this.playerInventory, player)) {
-						return ItemStack.EMPTY;
+						return;
 					}
 				}
 				
@@ -155,16 +156,14 @@ public class SyncedGuiDescription extends ScreenHandler implements GuiDescriptio
 				}
 			}
 			
-			return remaining;
-		} else {
-			return super.onSlotClick(slotNumber, button, action, player);
+			super.onSlotClick(slotNumber, button, action, player);
 		}
 	}
 	
 	/** WILL MODIFY toInsert! Returns true if anything was inserted. */
 	private boolean insertIntoExisting(ItemStack toInsert, Slot slot, PlayerEntity player) {
 		ItemStack curSlotStack = slot.getStack();
-		if (!curSlotStack.isEmpty() && canStacksCombine(toInsert, curSlotStack) && slot.canInsert(toInsert)) {
+		if (!curSlotStack.isEmpty() && ItemStack.canCombine(toInsert, curSlotStack) && slot.canInsert(toInsert)) {
 			int combinedAmount = curSlotStack.getCount() + toInsert.getCount();
 			int maxAmount = Math.min(toInsert.getMaxCount(), slot.getMaxItemCount(toInsert));
 			if (combinedAmount <= maxAmount) {
@@ -297,52 +296,6 @@ public class SyncedGuiDescription extends ScreenHandler implements GuiDescriptio
 		
 		return inserted;
 	}
-	
-	@Nullable
-	public WWidget doMouseUp(int x, int y, int state) {
-		if (rootPanel!=null) return rootPanel.onMouseUp(x, y, state);
-		return null;
-	}
-
-	@Nullable
-	public WWidget doMouseDown(int x, int y, int button) {
-		if (rootPanel!=null) return rootPanel.onMouseDown(x, y, button);
-		return null;
-	}
-
-	public void doMouseDrag(int x, int y, int button, double deltaX, double deltaY) {
-		if (rootPanel!=null) rootPanel.onMouseDrag(x, y, button, deltaX, deltaY);
-	}
-
-	public void doClick(int x, int y, int button) {
-		if (focus!=null) {
-			int wx = focus.getAbsoluteX();
-			int wy = focus.getAbsoluteY();
-
-			if (x>=wx && x<wx+focus.getWidth() && y>=wy && y<wy+focus.getHeight()) {
-				//Do nothing, focus will get the click soon
-			} else {
-				//Invalidate the component first
-				WWidget lastFocus = focus;
-				focus = null;
-				lastFocus.onFocusLost();
-			}
-		}
-
-		//if (rootPanel!=null) rootPanel.onClick(x, y, button);
-	}
-
-	public void doCharType(char ch) {
-		if (focus!=null) focus.onCharTyped(ch);
-	}
-
-	//public void doKeyPress(int key) {
-	//	if (focus!=null) focus.onKeyPressed(key);
-	//}
-
-	//public void doKeyRelease(int key) {
-	//	if (focus!=null) focus.onKeyReleased(key);
-	//}
 
 	@Nullable
 	@Override
@@ -429,7 +382,7 @@ public class SyncedGuiDescription extends ScreenHandler implements GuiDescriptio
 	}
 
 	private static Inventory getBlockInventory(ScreenHandlerContext ctx, Supplier<Inventory> fallback) {
-		return ctx.run((world, pos) -> {
+		return ctx.get((world, pos) -> {
 			BlockState state = world.getBlockState(pos);
 			Block b = state.getBlock();
 
@@ -467,7 +420,7 @@ public class SyncedGuiDescription extends ScreenHandler implements GuiDescriptio
 	 * @return the found property delegate
 	 */
 	public static PropertyDelegate getBlockPropertyDelegate(ScreenHandlerContext ctx) {
-		return ctx.run((world, pos) -> {
+		return ctx.get((world, pos) -> {
 			BlockEntity be = world.getBlockEntity(pos);
 			if (be!=null && be instanceof PropertyDelegateHolder) {
 				return ((PropertyDelegateHolder)be).getPropertyDelegate();
@@ -491,7 +444,7 @@ public class SyncedGuiDescription extends ScreenHandler implements GuiDescriptio
 	 * @since 2.0.0
 	 */
 	public static PropertyDelegate getBlockPropertyDelegate(ScreenHandlerContext ctx, int size) {
-		return ctx.run((world, pos) -> {
+		return ctx.get((world, pos) -> {
 			BlockEntity be = world.getBlockEntity(pos);
 			if (be!=null && be instanceof PropertyDelegateHolder) {
 				return ((PropertyDelegateHolder)be).getPropertyDelegate();

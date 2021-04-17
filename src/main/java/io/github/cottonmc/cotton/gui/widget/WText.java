@@ -4,16 +4,15 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 
-import io.github.cottonmc.cotton.gui.client.LibGuiClient;
+import io.github.cottonmc.cotton.gui.client.LibGui;
 import io.github.cottonmc.cotton.gui.client.ScreenDrawing;
-import io.github.cottonmc.cotton.gui.client.TextHoverRendererScreen;
 import io.github.cottonmc.cotton.gui.widget.data.HorizontalAlignment;
+import io.github.cottonmc.cotton.gui.widget.data.InputResult;
 import io.github.cottonmc.cotton.gui.widget.data.VerticalAlignment;
 import org.jetbrains.annotations.Nullable;
 
@@ -109,29 +108,27 @@ public class WText extends WWidget {
 
 		for (int i = 0; i < wrappedLines.size(); i++) {
 			OrderedText line = wrappedLines.get(i);
-			int c = LibGuiClient.config.darkMode ? darkmodeColor : color;
+			int c = LibGui.isDarkMode() ? darkmodeColor : color;
 
 			ScreenDrawing.drawString(matrices, line, horizontalAlignment, x, y + yOffset + i * font.fontHeight, width, c);
 		}
 
 		Style hoveredTextStyle = getTextStyleAt(mouseX, mouseY);
-		if (hoveredTextStyle != null) {
-			Screen screen = MinecraftClient.getInstance().currentScreen;
-			if (screen instanceof TextHoverRendererScreen) {
-				((TextHoverRendererScreen) screen).renderTextHover(matrices, hoveredTextStyle, x + mouseX, y + mouseY);
-			}
-		}
+		ScreenDrawing.drawTextHover(matrices, hoveredTextStyle, x + mouseX, y + mouseY);
 	}
 
 	@Environment(EnvType.CLIENT)
 	@Override
-	public void onClick(int x, int y, int button) {
-		if (button != 0) return; // only left clicks
+	public InputResult onClick(int x, int y, int button) {
+		if (button != 0) return InputResult.IGNORED; // only left clicks
 
 		Style hoveredTextStyle = getTextStyleAt(x, y);
 		if (hoveredTextStyle != null) {
-			MinecraftClient.getInstance().currentScreen.handleTextClick(hoveredTextStyle);
+			boolean processed = MinecraftClient.getInstance().currentScreen.handleTextClick(hoveredTextStyle);
+			return InputResult.of(processed);
 		}
+
+		return InputResult.IGNORED;
 	}
 
 	/**

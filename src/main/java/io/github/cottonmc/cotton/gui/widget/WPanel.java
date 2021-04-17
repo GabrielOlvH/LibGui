@@ -6,6 +6,7 @@ import net.minecraft.client.util.math.MatrixStack;
 
 import io.github.cottonmc.cotton.gui.GuiDescription;
 import io.github.cottonmc.cotton.gui.client.BackgroundPainter;
+import io.github.cottonmc.cotton.gui.widget.data.Insets;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -87,74 +88,21 @@ public abstract class WPanel extends WWidget {
 	 * @param w the widget
 	 */
 	protected void expandToFit(WWidget w) {
-		int pushRight = w.getX()+w.getWidth();
-		int pushDown =  w.getY()+w.getHeight();
+		expandToFit(w, Insets.NONE);
+	}
+
+	/**
+	 * Expands this panel be at least as large as the widget.
+	 *
+	 * @param w      the widget
+	 * @param insets the layout insets
+	 * @since 4.0.0
+	 */
+	protected void expandToFit(WWidget w, Insets insets) {
+		int pushRight = w.getX()+w.getWidth()+insets.right;
+		int pushDown =  w.getY()+w.getHeight()+insets.bottom;
 		this.setSize(Math.max(this.getWidth(), pushRight), Math.max(this.getHeight(), pushDown));
 	}
-
-	@Environment(EnvType.CLIENT)
-	@Override
-	public WWidget onMouseUp(int x, int y, int button) {
-		if (children.isEmpty()) return super.onMouseUp(x, y, button);
-		for(int i=children.size()-1; i>=0; i--) { //Backwards so topmost widgets get priority
-			WWidget child = children.get(i);
-			if (    x>=child.getX() &&
-					y>=child.getY() &&
-					x<child.getX()+child.getWidth() &&
-					y<child.getY()+child.getHeight()) {
-				return child.onMouseUp(x-child.getX(), y-child.getY(), button);
-			}
-		}
-		return super.onMouseUp(x, y, button);
-	}
-
-	@Environment(EnvType.CLIENT)
-	@Override
-	public WWidget onMouseDown(int x, int y, int button) {
-		if (children.isEmpty()) return super.onMouseDown(x, y, button);
-		for(int i=children.size()-1; i>=0; i--) { //Backwards so topmost widgets get priority
-			WWidget child = children.get(i);
-			if (    x>=child.getX() &&
-					y>=child.getY() &&
-					x<child.getX()+child.getWidth() &&
-					y<child.getY()+child.getHeight()) {
-				return child.onMouseDown(x-child.getX(), y-child.getY(), button);
-			}
-		}
-		return super.onMouseDown(x, y, button);
-	}
-
-	@Environment(EnvType.CLIENT)
-	@Override
-	public void onMouseDrag(int x, int y, int button) {
-		if (children.isEmpty()) return;
-		for(int i=children.size()-1; i>=0; i--) { //Backwards so topmost widgets get priority
-			WWidget child = children.get(i);
-			if (    x>=child.getX() &&
-					y>=child.getY() &&
-					x<child.getX()+child.getWidth() &&
-					y<child.getY()+child.getHeight()) {
-				child.onMouseDrag(x-child.getX(), y-child.getY(), button);
-				return; //Only send the message to the first valid recipient
-			}
-		}
-		super.onMouseDrag(x, y, button);
-	}
-	/*
-	@Override
-	public void onClick(int x, int y, int button) {
-		if (children.isEmpty()) return;
-		for(int i=children.size()-1; i>=0; i--) { //Backwards so topmost widgets get priority
-			WWidget child = children.get(i);
-			if (    x>=child.getX() &&
-					y>=child.getY() &&
-					x<child.getX()+child.getWidth() &&
-					y<child.getY()+child.getHeight()) {
-				child.onClick(x-child.getX(), y-child.getY(), button);
-				return; //Only send the message to the first valid recipient
-			}
-		}
-	}*/
 
 	/**
 	 * Finds the most specific child node at this location.
@@ -194,7 +142,7 @@ public abstract class WPanel extends WWidget {
 	@Environment(EnvType.CLIENT)
 	@Override
 	public void paint(MatrixStack matrices, int x, int y, int mouseX, int mouseY) {
-		if (backgroundPainter!=null) backgroundPainter.paintBackground(x, y, this);
+		if (backgroundPainter!=null) backgroundPainter.paintBackground(matrices, x, y, this);
 
 		for(WWidget child : children) {
 			child.paint(matrices, x + child.getX(), y + child.getY(), mouseX-child.getX(), mouseY-child.getY());

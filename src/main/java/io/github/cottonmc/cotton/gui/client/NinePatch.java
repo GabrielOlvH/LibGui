@@ -2,23 +2,13 @@ package io.github.cottonmc.cotton.gui.client;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
-import net.minecraft.resource.Resource;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.resource.SinglePreparationResourceReloadListener;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.profiler.Profiler;
 
+import io.github.cottonmc.cotton.gui.impl.client.NinePatchInternals;
 import io.github.cottonmc.cotton.gui.widget.WWidget;
 import org.jetbrains.annotations.Nullable;
-
-import java.io.InputStream;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
 
 /**
  * The nine-patch background painter paints rectangles using a nine-patch texture.
@@ -167,7 +157,7 @@ public class NinePatch implements BackgroundPainter {
 	}
 
 	@Override
-	public void paintBackground(int left, int top, WWidget panel) {
+	public void paintBackground(MatrixStack matrices, int left, int top, WWidget panel) {
 		int width = panel.getWidth() + leftPadding + rightPadding;
 		int height = panel.getHeight() + topPadding + bottomPadding;
 		left = left - leftPadding;
@@ -178,12 +168,12 @@ public class NinePatch implements BackgroundPainter {
 		int y2 = top + height - cornerSize;
 		float uv1 = cornerUv;
 		float uv2 = 1.0f - cornerUv;
-		Mode mode = this.mode != null ? this.mode : MetadataLoader.INSTANCE.getProperties(texture).getMode();
+		Mode mode = this.mode != null ? this.mode : NinePatchInternals.MetadataLoader.INSTANCE.getProperties(texture).getMode();
 
-		ScreenDrawing.texturedRect(left, top, cornerSize, cornerSize, texture, 0, 0, uv1, uv1, 0xFF_FFFFFF);
-		ScreenDrawing.texturedRect(x2, top, cornerSize, cornerSize, texture, uv2, 0, 1, uv1, 0xFF_FFFFFF);
-		ScreenDrawing.texturedRect(left, y2, cornerSize, cornerSize, texture, 0, uv2, uv1, 1, 0xFF_FFFFFF);
-		ScreenDrawing.texturedRect(x2, y2, cornerSize, cornerSize, texture, uv2, uv2, 1, 1, 0xFF_FFFFFF);
+		ScreenDrawing.texturedRect(matrices, left, top, cornerSize, cornerSize, texture, 0, 0, uv1, uv1, 0xFF_FFFFFF);
+		ScreenDrawing.texturedRect(matrices, x2, top, cornerSize, cornerSize, texture, uv2, 0, 1, uv1, 0xFF_FFFFFF);
+		ScreenDrawing.texturedRect(matrices, left, y2, cornerSize, cornerSize, texture, 0, uv2, uv1, 1, 0xFF_FFFFFF);
+		ScreenDrawing.texturedRect(matrices, x2, y2, cornerSize, cornerSize, texture, uv2, uv2, 1, 1, 0xFF_FFFFFF);
 
 		if (mode == Mode.TILING) {
 			int tileSize = (int) (cornerSize / cornerUv - 2 * cornerSize);
@@ -196,8 +186,8 @@ public class NinePatch implements BackgroundPainter {
 				int tileWidth = Math.min(widthLeft, tileSize);
 				float uo = (tileSize - tileWidth) * px; // Used to remove unnecessary pixels on the X axis
 
-				ScreenDrawing.texturedRect(x1 + i * tileSize, top, tileWidth, cornerSize, texture, uv1, 0, uv2 - uo, uv1, 0xFF_FFFFFF);
-				ScreenDrawing.texturedRect(x1 + i * tileSize, y2, tileWidth, cornerSize, texture, uv1, uv2, uv2 - uo, 1, 0xFF_FFFFFF);
+				ScreenDrawing.texturedRect(matrices, x1 + i * tileSize, top, tileWidth, cornerSize, texture, uv1, 0, uv2 - uo, uv1, 0xFF_FFFFFF);
+				ScreenDrawing.texturedRect(matrices, x1 + i * tileSize, y2, tileWidth, cornerSize, texture, uv1, uv2, uv2 - uo, 1, 0xFF_FFFFFF);
 
 				// Reset the height left each time the Y is looped
 				heightLeft = height - 2 * cornerSize;
@@ -206,21 +196,21 @@ public class NinePatch implements BackgroundPainter {
 					int tileHeight = Math.min(heightLeft, tileSize);
 					float vo = (tileSize - tileHeight) * px; // Used to remove unnecessary pixels on the Y axis
 
-					ScreenDrawing.texturedRect(left, y1 + j * tileSize, cornerSize, tileHeight, texture, 0, uv1, uv1, uv2 - vo, 0xFF_FFFFFF);
-					ScreenDrawing.texturedRect(x2, y1 + j * tileSize, cornerSize, tileHeight, texture, uv2, uv1, 1, uv2 - vo, 0xFF_FFFFFF);
+					ScreenDrawing.texturedRect(matrices, left, y1 + j * tileSize, cornerSize, tileHeight, texture, 0, uv1, uv1, uv2 - vo, 0xFF_FFFFFF);
+					ScreenDrawing.texturedRect(matrices, x2, y1 + j * tileSize, cornerSize, tileHeight, texture, uv2, uv1, 1, uv2 - vo, 0xFF_FFFFFF);
 
-					ScreenDrawing.texturedRect(x1 + i * tileSize, y1 + j * tileSize, tileWidth, tileHeight, texture, uv1, uv1, uv2 - uo, uv2 - vo, 0xFF_FFFFFF);
+					ScreenDrawing.texturedRect(matrices, x1 + i * tileSize, y1 + j * tileSize, tileWidth, tileHeight, texture, uv1, uv1, uv2 - uo, uv2 - vo, 0xFF_FFFFFF);
 					heightLeft -= tileSize;
 				}
 				widthLeft -= tileSize;
 			}
 		} else {
-			ScreenDrawing.texturedRect(x1, top, width - 2 * cornerSize, cornerSize, texture, uv1, 0, uv2, uv1, 0xFF_FFFFFF);
-			ScreenDrawing.texturedRect(left, y1, cornerSize, height - 2 * cornerSize, texture, 0, uv1, uv1, uv2, 0xFF_FFFFFF);
-			ScreenDrawing.texturedRect(x1, y2, width - 2 * cornerSize, cornerSize, texture, uv1, uv2, uv2, 1, 0xFF_FFFFFF);
-			ScreenDrawing.texturedRect(x2, y1, cornerSize, height - 2 * cornerSize, texture, uv2, uv1, 1, uv2, 0xFF_FFFFFF);
+			ScreenDrawing.texturedRect(matrices, x1, top, width - 2 * cornerSize, cornerSize, texture, uv1, 0, uv2, uv1, 0xFF_FFFFFF);
+			ScreenDrawing.texturedRect(matrices, left, y1, cornerSize, height - 2 * cornerSize, texture, 0, uv1, uv1, uv2, 0xFF_FFFFFF);
+			ScreenDrawing.texturedRect(matrices, x1, y2, width - 2 * cornerSize, cornerSize, texture, uv1, uv2, uv2, 1, 0xFF_FFFFFF);
+			ScreenDrawing.texturedRect(matrices, x2, y1, cornerSize, height - 2 * cornerSize, texture, uv2, uv1, 1, uv2, 0xFF_FFFFFF);
 
-			ScreenDrawing.texturedRect(x1, y1, width - 2 * cornerSize, height - 2 * cornerSize, texture, uv1, uv1, uv2, uv2, 0xFF_FFFFFF);
+			ScreenDrawing.texturedRect(matrices, x1, y1, width - 2 * cornerSize, height - 2 * cornerSize, texture, uv1, uv1, uv2, uv2, 0xFF_FFFFFF);
 		}
 	}
 
@@ -239,8 +229,15 @@ public class NinePatch implements BackgroundPainter {
 		 */
 		TILING;
 
+		/**
+		 * Deserializes a nine-patch mode from a string.
+		 *
+		 * @param str the mode string
+		 * @return the mode, or null if the string is invalid
+		 * @since 4.0.0
+		 */
 		@Nullable
-		static Mode fromString(String str) {
+		public static Mode fromString(String str) {
 			if (str == null) return null;
 
 			if (str.equalsIgnoreCase("stretching")) return STRETCHING;
@@ -250,83 +247,4 @@ public class NinePatch implements BackgroundPainter {
 		}
 	}
 
-	public static class TextureProperties {
-		public static final TextureProperties DEFAULT = new TextureProperties(Mode.STRETCHING);
-
-		private final Mode mode;
-
-		public TextureProperties(Mode mode) {
-			this.mode = mode;
-		}
-
-		public Mode getMode() {
-			return mode;
-		}
-	}
-
-	public static class MetadataLoader extends SinglePreparationResourceReloadListener<Map<Identifier, Properties>> implements IdentifiableResourceReloadListener {
-		public static final MetadataLoader INSTANCE = new MetadataLoader();
-
-		private static final Identifier ID = new Identifier("libgui", "9patch_metadata");
-		private static final String SUFFIX = ".9patch";
-
-		private Map<Identifier, TextureProperties> properties = Collections.emptyMap();
-
-		public TextureProperties getProperties(Identifier texture) {
-			return properties.getOrDefault(texture, TextureProperties.DEFAULT);
-		}
-
-		@Override
-		public Identifier getFabricId() {
-			return ID;
-		}
-
-		@Override
-		protected Map<Identifier, Properties> prepare(ResourceManager manager, Profiler profiler) {
-			Collection<Identifier> ids = manager.findResources("textures", s -> s.endsWith(SUFFIX));
-			Map<Identifier, Properties> result = new HashMap<>();
-
-			for (Identifier input : ids) {
-				try (Resource resource = manager.getResource(input);
-					 InputStream stream = resource.getInputStream()) {
-					Properties props = new Properties();
-					props.load(stream);
-					Identifier textureId = new Identifier(input.getNamespace(), input.getPath().substring(0, input.getPath().length() - SUFFIX.length()));
-					result.put(textureId, props);
-				} catch (Exception e) {
-					LibGuiClient.logger.error("Error while loading metadata file {}, skipping...", input, e);
-				}
-			}
-
-			return result;
-		}
-
-		@Override
-		protected void apply(Map<Identifier, Properties> meta, ResourceManager manager, Profiler profiler) {
-			properties = new HashMap<>();
-			for (Map.Entry<Identifier, Properties> entry : meta.entrySet()) {
-				Identifier id = entry.getKey();
-				Properties props = entry.getValue();
-
-				Mode mode = TextureProperties.DEFAULT.getMode();
-//				float cornerUv = TextureProperties.DEFAULT.getCornerUv();
-
-				if (props.containsKey("mode")) {
-					String modeStr = props.getProperty("mode");
-					mode = Mode.fromString(modeStr);
-					if (mode == null) {
-						LibGuiClient.logger.error("Invalid mode '{}' in nine-patch metadata file for texture {}", modeStr, id);
-						continue;
-					}
-				}
-
-//				if (props.containsKey("cornerUv")) {
-//					cornerUv = Float.parseFloat(props.getProperty("cornerUv"));
-//				}
-
-				TextureProperties texProperties = new TextureProperties(mode);
-				properties.put(id, texProperties);
-			}
-		}
-	}
 }

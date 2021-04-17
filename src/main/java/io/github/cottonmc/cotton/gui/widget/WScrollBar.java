@@ -4,11 +4,14 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.util.math.MatrixStack;
 
-import io.github.cottonmc.cotton.gui.client.LibGuiClient;
+import io.github.cottonmc.cotton.gui.client.LibGui;
 import io.github.cottonmc.cotton.gui.client.ScreenDrawing;
 import io.github.cottonmc.cotton.gui.widget.data.Axis;
+import io.github.cottonmc.cotton.gui.widget.data.InputResult;
 
 public class WScrollBar extends WWidget {
+	private static final int SCROLLING_SPEED = 4;
+
 	protected Axis axis = Axis.HORIZONTAL;
 	protected int value;
 	protected int maxValue = 100;
@@ -36,10 +39,10 @@ public class WScrollBar extends WWidget {
 	@Environment(EnvType.CLIENT)
 	@Override
 	public void paint(MatrixStack matrices, int x, int y, int mouseX, int mouseY) {
-		if (LibGuiClient.config.darkMode) {
-			ScreenDrawing.drawBeveledPanel(x, y, width, height, 0xFF_212121, 0xFF_2F2F2F, 0xFF_5D5D5D);
+		if (LibGui.isDarkMode()) {
+			ScreenDrawing.drawBeveledPanel(matrices, x, y, width, height, 0xFF_212121, 0xFF_2F2F2F, 0xFF_5D5D5D);
 		} else {
-			ScreenDrawing.drawBeveledPanel(x, y, width, height, 0xFF_373737, 0xFF_8B8B8B, 0xFF_FFFFFF);
+			ScreenDrawing.drawBeveledPanel(matrices, x, y, width, height, 0xFF_373737, 0xFF_8B8B8B, 0xFF_FFFFFF);
 		}
 		if (maxValue<=0) return;
 
@@ -47,7 +50,7 @@ public class WScrollBar extends WWidget {
 		int top, middle, bottom;
 
 		if (sliding) {
-			if (LibGuiClient.config.darkMode) {
+			if (LibGui.isDarkMode()) {
 				top = 0xFF_6C6C6C;
 				middle = 0xFF_2F2F2F;
 				bottom = 0xFF_212121;
@@ -57,7 +60,7 @@ public class WScrollBar extends WWidget {
 				bottom = 0xFF_555555;
 			}
 		} else if (isWithinBounds(mouseX, mouseY)) {
-			if (LibGuiClient.config.darkMode) {
+			if (LibGui.isDarkMode()) {
 				top = 0xFF_5F6A9D;
 				middle = 0xFF_323F6E;
 				bottom = 0xFF_0B204A;
@@ -67,7 +70,7 @@ public class WScrollBar extends WWidget {
 				bottom = 0xFF_343E75;
 			}
 		} else {
-			if (LibGuiClient.config.darkMode) {
+			if (LibGui.isDarkMode()) {
 				top = 0xFF_6C6C6C;
 				middle = 0xFF_414141;
 				bottom = 0xFF_212121;
@@ -79,16 +82,16 @@ public class WScrollBar extends WWidget {
 		}
 
 		if (axis==Axis.HORIZONTAL) {
-			ScreenDrawing.drawBeveledPanel(x+1+getHandlePosition(), y+1, getHandleSize(), height-2, top, middle, bottom);
+			ScreenDrawing.drawBeveledPanel(matrices, x+1+getHandlePosition(), y+1, getHandleSize(), height-2, top, middle, bottom);
 
 			if (isFocused()) {
-				drawBeveledOutline(x+1+getHandlePosition(), y+1, getHandleSize(), height-2, 0xFF_FFFFA7, 0xFF_8C8F39);
+				drawBeveledOutline(matrices, x+1+getHandlePosition(), y+1, getHandleSize(), height-2, 0xFF_FFFFA7, 0xFF_8C8F39);
 			}
 		} else {
-			ScreenDrawing.drawBeveledPanel(x+1, y+1+getHandlePosition(), width-2, getHandleSize(), top, middle, bottom);
+			ScreenDrawing.drawBeveledPanel(matrices, x+1, y+1+getHandlePosition(), width-2, getHandleSize(), top, middle, bottom);
 
 			if (isFocused()) {
-				drawBeveledOutline(x+1, y+1+getHandlePosition(), width-2, getHandleSize(), 0xFF_FFFFA7, 0xFF_8C8F39);
+				drawBeveledOutline(matrices, x+1, y+1+getHandlePosition(), width-2, getHandleSize(), 0xFF_FFFFA7, 0xFF_8C8F39);
 			}
 		}
 	}
@@ -103,11 +106,11 @@ public class WScrollBar extends WWidget {
 		return true;
 	}
 
-	private static void drawBeveledOutline(int x, int y, int width, int height, int topleft, int bottomright) {
-		ScreenDrawing.coloredRect(x,             y,              width,     1,          topleft); //Top shadow
-		ScreenDrawing.coloredRect(x,             y + 1,          1,         height - 1, topleft); //Left shadow
-		ScreenDrawing.coloredRect(x + width - 1, y + 1,          1,         height - 1, bottomright); //Right hilight
-		ScreenDrawing.coloredRect(x + 1,         y + height - 1, width - 1, 1,          bottomright); //Bottom hilight
+	private static void drawBeveledOutline(MatrixStack matrices, int x, int y, int width, int height, int topleft, int bottomright) {
+		ScreenDrawing.coloredRect(matrices, x,             y,              width,     1,          topleft); //Top shadow
+		ScreenDrawing.coloredRect(matrices, x,             y + 1,          1,         height - 1, topleft); //Left shadow
+		ScreenDrawing.coloredRect(matrices, x + width - 1, y + 1,          1,         height - 1, bottomright); //Right hilight
+		ScreenDrawing.coloredRect(matrices, x + 1,         y + height - 1, width - 1, 1,          bottomright); //Bottom hilight
 	}
 
 	/**
@@ -166,7 +169,7 @@ public class WScrollBar extends WWidget {
 	}
 
 	@Override
-	public WWidget onMouseDown(int x, int y, int button) {
+	public InputResult onMouseDown(int x, int y, int button) {
 		//TODO: Clicking before or after the handle should jump instead of scrolling
 		requestFocus();
 
@@ -178,23 +181,24 @@ public class WScrollBar extends WWidget {
 			anchorValue = value;
 		}
 		sliding = true;
-		return this;
+		return InputResult.PROCESSED;
 	}
 
 	@Environment(EnvType.CLIENT)
 	@Override
-	public void onMouseDrag(int x, int y, int button) {
+	public InputResult onMouseDrag(int x, int y, int button, double deltaX, double deltaY) {
 		adjustSlider(x, y);
+		return InputResult.PROCESSED;
 	}
 
 	@Environment(EnvType.CLIENT)
 	@Override
-	public WWidget onMouseUp(int x, int y, int button) {
+	public InputResult onMouseUp(int x, int y, int button) {
 		//TODO: Clicking before or after the handle should jump instead of scrolling
 		anchor = -1;
 		anchorValue = -1;
 		sliding = false;
-		return this;
+		return InputResult.PROCESSED;
 	}
 
 	@Override
@@ -216,8 +220,9 @@ public class WScrollBar extends WWidget {
 
 	@Environment(EnvType.CLIENT)
 	@Override
-	public void onMouseScroll(int x, int y, double amount) {
-		setValue(getValue() + (int) -amount);
+	public InputResult onMouseScroll(int x, int y, double amount) {
+		setValue(getValue() + (int) -amount * SCROLLING_SPEED);
+		return InputResult.PROCESSED;
 	}
 
 	public int getValue() {
